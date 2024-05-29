@@ -128,6 +128,8 @@ async function handleWebSocket(message: RequestStartMessage, state: ClientState)
                     type: "ws-closed",
                     id: message.id,
                 });
+            } catch (_err) {
+                // ignore
             } finally {
                 await state.ch.out.send({
                     type: "ws-closed",
