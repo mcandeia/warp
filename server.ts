@@ -2,6 +2,12 @@ import { type DuplexChannel, makeChan, makeChanStream, makeWebSocket } from "./c
 import { handleClientMessage } from "./handlers.server.ts";
 import type { ClientMessage, RequestObject, ServerMessage, ServerState } from "./messages.ts";
 
+/**
+ * Ensures that the given chunk is in the form of a Uint8Array.
+ * If it's not already an array, it converts the provided object into a Uint8Array.
+ * @param {Uint8Array | Record<string, Uint8Array[number]>} chunk - The input chunk, which can be either a Uint8Array or an object.
+ * @returns {Uint8Array} The chunk converted into a Uint8Array.
+ */
 export const ensureChunked = (chunk: Uint8Array | Record<string, Uint8Array[number]>): Uint8Array => {
   if (Array.isArray(chunk)) {
     return chunk as Uint8Array;
@@ -13,10 +19,22 @@ export const ensureChunked = (chunk: Uint8Array | Record<string, Uint8Array[numb
 const domainsToConnections: Record<string, DuplexChannel<ServerMessage, ClientMessage>> = {};
 const ongoingRequests: Record<string, RequestObject> = {};
 
+/**
+ * Represents options for configuring the server.
+ * @typedef {Object} ServerOptions
+ * @property {string[]} apiKeys - An array of API keys for authentication.
+ * @property {number} port - The port number where the server will listen for connections.
+ */
 export interface ServerOptions {
   apiKeys: string[]
   port: number;
 }
+
+/**
+ * Starts the Warp server.
+ * @param {ServerOptions} [options] - Optional configurations for the server.
+ * @returns {Deno.HttpServer<Deno.NetAddr>} An instance of Deno HTTP server.
+ */
 export const start = (options?: ServerOptions): Deno.HttpServer<Deno.NetAddr> => {
   const port = (options?.port ?? Deno.env.get("PORT"));
   const apiKeys = options?.apiKeys ?? Deno.env.get("API_KEYS")?.split(",") ?? []; // array of api keys (random strings)

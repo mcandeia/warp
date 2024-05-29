@@ -1,4 +1,4 @@
-import { Channel, DuplexChannel } from "./channel.ts";
+import type { Channel, DuplexChannel } from "./channel.ts";
 
 export interface RequestObject {
     id: string;

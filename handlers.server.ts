@@ -2,8 +2,17 @@ import { makeReadableStream, makeWebSocket } from "./channel.ts";
 import type { ClientMessage, ClientMessageHandler, DataEndMessage, DataMessage, RegisterMessage, ResponseStartMessage, WSConnectionClosed, WSMessage } from "./messages.ts";
 import { ensureChunked } from "./server.ts";
 
-const NULL_BODIES = [101, 204, 205, 304]
+/**
+ * List of status codes that represent null bodies in responses.
+ * @type {number[]}
+ */
+const NULL_BODIES = [101, 204, 205, 304];
 
+/**
+ * Handler for the 'response-start' client message.
+ * @param {ClientState} state - The client state.
+ * @param {ResponseStartMessage} message - The message data.
+ */
 const onResponseStart: ClientMessageHandler<ResponseStartMessage> = (state, message) => {
     const request = state.ongoingRequests[message.id];
     if (!request) {
@@ -34,6 +43,11 @@ const onResponseStart: ClientMessageHandler<ResponseStartMessage> = (state, mess
     request.responseObject.resolve(resp);
 }
 
+/**
+ * Handler for the 'data' client message.
+ * @param {ClientState} state - The client state.
+ * @param {DataMessage} message - The message data.
+ */
 const data: ClientMessageHandler<DataMessage> = async (state, message) => {
     const request = state.ongoingRequests[message.id];
     if (!request) {
@@ -51,6 +65,11 @@ const data: ClientMessageHandler<DataMessage> = async (state, message) => {
     }
 }
 
+/**
+ * Handler for the 'data-end' client message.
+ * @param {ClientState} state - The client state.
+ * @param {DataEndMessage} message - The message data.
+ */
 const onDataEnd: ClientMessageHandler<DataEndMessage> = (state, message) => {
     const request = state.ongoingRequests[message.id];
     if (!request) {
@@ -73,14 +92,29 @@ const onDataEnd: ClientMessageHandler<DataEndMessage> = (state, message) => {
     }
 }
 
+/**
+ * Handler for the 'ws-closed' client message.
+ * @param {ClientState} state - The client state.
+ * @param {WSConnectionClosed} message - The message data.
+ */
 const onWsClosed: ClientMessageHandler<WSConnectionClosed> = (state, message) => {
     delete state.ongoingRequests[message.id];
 }
 
+/**
+ * Handler for the 'ws-message' client message.
+ * @param {ClientState} state - The client state.
+ * @param {WSMessage} message - The message data.
+ */
 const onWsMessage: ClientMessageHandler<WSMessage> = async (state, message) => {
     await state.ongoingRequests?.[message.id]?.socketChan?.send(message.data)
 }
 
+/**
+ * Handler for the 'ws-opened' client message.
+ * @param {ClientState} state - The client state.
+ * @param {DataEndMessage} message - The message data.
+ */
 const onWsOpened: ClientMessageHandler<DataEndMessage> = async (state, message) => {
     const request = state.ongoingRequests[message.id];
     if (!request) {
@@ -104,6 +138,11 @@ const onWsOpened: ClientMessageHandler<DataEndMessage> = async (state, message) 
         delete state.ongoingRequests[message.id];
     }
 }
+/**
+ * Handler for the 'register' client message.
+ * @param {ClientState} state - The client state.
+ * @param {RegisterMessage} message - The message data.
+ */
 const register: ClientMessageHandler<RegisterMessage> = async (state, message) => {
     if (state.apiKeys.includes(message.apiKey)) {
         state.domainsToConnections[message.domain] = state.ch;
@@ -119,7 +158,11 @@ const register: ClientMessageHandler<RegisterMessage> = async (state, message) =
     }
 }
 
-
+/**
+ * A record mapping client message types to their respective handlers.
+ * @type {Record<ClientMessage["type"], ClientMessageHandler<any>>}
+ * @ignore
+ */
 // deno-lint-ignore no-explicit-any
 const handlersByType: Record<ClientMessage["type"], ClientMessageHandler<any>> = {
     "response-start": onResponseStart,
@@ -130,6 +173,12 @@ const handlersByType: Record<ClientMessage["type"], ClientMessageHandler<any>> =
     "ws-opened": onWsOpened,
     register,
 }
+
+/**
+ * Handles client messages received from the server.
+ * @param {ClientState} state - The client state.
+ * @param {ClientMessage} message - The message received from the server.
+ */
 export const handleClientMessage: ClientMessageHandler = async (state, message) => {
     console.info(new Date(), `[server]`, message.type, "id" in message ? message.id : "");
     await handlersByType?.[message.type]?.(state, message)?.catch?.(err => {
