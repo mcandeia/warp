@@ -116,18 +116,25 @@ async function handleWebSocket(message: RequestStartMessage, state: ClientState)
         });
         state.wsMessages[message.id] = wsCh.out;
         (async () => {
-            for await (const data of wsCh.in.recv()) {
+            try {
+                for await (const data of wsCh.in.recv()) {
+                    await state.ch.out.send({
+                        type: "ws-message",
+                        data,
+                        id: message.id,
+                    });
+                }
                 await state.ch.out.send({
-                    type: "ws-message",
-                    data,
+                    type: "ws-closed",
                     id: message.id,
                 });
+            } finally {
+                await state.ch.out.send({
+                    type: "ws-closed",
+                    id: message.id,
+                }).catch(_err => { });
+                delete state.wsMessages[message.id];
             }
-            await state.ch.out.send({
-                type: "ws-closed",
-                id: message.id,
-            });
-            delete state.wsMessages[message.id];
         })();
     } catch (err) {
         await state.ch.out.send({
