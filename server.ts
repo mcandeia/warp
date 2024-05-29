@@ -1,6 +1,6 @@
-import { DuplexChannel, makeChan, makeChanStream, makeWebSocket } from "./channel.ts";
+import { type DuplexChannel, makeChan, makeChanStream, makeWebSocket } from "./channel.ts";
 import { handleClientMessage } from "./handlers.server.ts";
-import { ClientMessage, RequestObject, ServerMessage, ServerState } from "./messages.ts";
+import type { ClientMessage, RequestObject, ServerMessage, ServerState } from "./messages.ts";
 
 export const ensureChunked = (chunk: Uint8Array | Record<string, Uint8Array[number]>): Uint8Array => {
   if (Array.isArray(chunk)) {
