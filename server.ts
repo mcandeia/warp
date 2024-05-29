@@ -17,7 +17,7 @@ export interface ServerOptions {
   apiKeys: string[]
   port: number;
 }
-export const start = (options?: ServerOptions) => {
+export const start = (options?: ServerOptions): Deno.HttpServer<Deno.NetAddr> => {
   const port = (options?.port ?? Deno.env.get("PORT"));
   const apiKeys = options?.apiKeys ?? Deno.env.get("API_KEYS")?.split(",") ?? []; // array of api keys (random strings)
 
